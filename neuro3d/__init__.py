@@ -38,29 +38,37 @@ if inside_blender:
     def unregister():
         addon.unregister()
 
+
 else:
+
     class Reporter:
         @property
         def is_available(self):
             return False
 
         def __getattr__(self, name):
-            warnings.warn("Controller can't be used outside of Blender environment", stacklevel=2)
+            warnings.warn(
+                "Controller can't be used outside of Blender environment", stacklevel=2
+            )
             return Reporter()
 
         def __call__(self, *args, **kwargs):
-            warnings.warn("Controller can't be used outside of Blender environment", stacklevel=2)
+            warnings.warn(
+                "Controller can't be used outside of Blender environment", stacklevel=2
+            )
 
     controller = Reporter()
 
 
 from . import animation
 
+
 class Branch:
     """
     A branch is a piece of uninterrupted unbranching cable used to construct
     :class:`cells <.Cell>`.
     """
+
     def __init__(self, coords, radii, children=None, ref=None):
         """
         Create a branch.
@@ -102,7 +110,9 @@ class Branch:
     @coords.setter
     def coords(self):
         if self._cell:
-            raise NotImplementedError("Manipulating the Blender object state not supported yet.")
+            raise NotImplementedError(
+                "Manipulating the Blender object state not supported yet."
+            )
         else:
             self._coords = coords
 
@@ -128,6 +138,7 @@ class Cell:
     A cell is the 3D representation of a collection of root :class:`Branches <.Branch>`,
     branching out into child Branches.
     """
+
     def __init__(self, roots, position=None, rotation=None):
         if position is None:
             position = np.array([0, 0, 0])
@@ -153,7 +164,9 @@ class Cell:
 
     @roots.setter
     def roots(self):
-        raise NotImplementedError("Manipulating the Blender object state not supported yet.")
+        raise NotImplementedError(
+            "Manipulating the Blender object state not supported yet."
+        )
 
     @property
     def position(self):
@@ -182,6 +195,7 @@ class Cell:
     def __dissolve__(self):
         for root in roots:
             root.__dissolve__()
+
 
 def create_branch(*args, **kwargs):
     """

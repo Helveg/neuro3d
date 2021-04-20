@@ -1,5 +1,6 @@
 import abc, numpy as np
 
+
 class Property(abc.ABC):
     @abc.abstractmethod
     def keyframe_insert(self, obj, frame, value):
