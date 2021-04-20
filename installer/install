@@ -7,7 +7,7 @@ os.system("git clone -b installer git@github.com:Helveg/neuro3d tmp_n3d")
 os.chdir("tmp_n3d")
 try:
     print("Zipping Neuro3D.")
-    shutil.make_archive("neuro3d", 'zip', "neuro3d")
+    shutil.make_archive("neuro3d", 'zip', ".", "neuro3d")
     print("Launching Blender, installing.")
     os.system(f"blender --background --python installer/blender_install.py")
 finally:
