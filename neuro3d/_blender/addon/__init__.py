@@ -122,7 +122,7 @@ class OBJECT_PT_CustomPanel(Panel):
     bl_idname = "OBJECT_PT_custom_panel"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "BlenderNEURON"
+    bl_category = "Neuro3D"
 
     def draw(self, context):
         layout = self.layout

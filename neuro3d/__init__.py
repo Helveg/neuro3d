@@ -1,3 +1,5 @@
+__version__ = "0.0.1"
+
 import warnings
 import numpy as np
 
@@ -13,14 +15,14 @@ else:
 # Blender version so that our addon is compatible across Blender versions.
 # `bl_info` needs to be defined at the module-level of the file aswell.
 bl_info = {
-    "name": "BlenderNEURON",
-    "description": "A Blender GUI for NEURON simulator",
-    "author": "Justas Birgiolas",
+    "name": "Neuro3D",
+    "description": "Visualization of neurons and simulation data",
+    "author": "Robin De Schepper",
     "version": (3, 0),
     "blender": (2, 91, 0),
-    "location": "View3D > Properties > BlenderNEURON",
-    "wiki_url": "BlenderNEURON.org",
-    "tracker_url": "https://github.com/JustasB/BlenderNEURON/issues",
+    "location": "View3D > Properties > Neuro3D",
+    "wiki_url": "https://neuro3d.readthedocs.io/",
+    "tracker_url": "https://github.com/Helveg/Neuro3D/issues",
     "support": "COMMUNITY",
     "category": "Import-Export",
 }

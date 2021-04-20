@@ -1,7 +1,6 @@
 from math import sqrt, pi
 import bpy
 import numpy as np
-from .utils import create_many_copies
 from .. import controller
 
 def _get_default_color(name):
