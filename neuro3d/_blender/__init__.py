@@ -1,7 +1,7 @@
 try:
     import bpy
 except:
-    raise ImportError("`blenderneuron._blender` can only be imported inside Blender.")
+    raise ImportError("`neuro3d._blender` can only be imported inside Blender.")
 
 
 def get_blender_version():
