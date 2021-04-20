@@ -19,11 +19,9 @@ jobs:
         run: |
           wget -O blender.tar.xz https://download.blender.org/release/Blender2.92/blender-2.92.0-linux64.tar.xz
           tar -xf blender.tar.xz
-          export PATH="blender-2.92.0-linux64:$PATH"
-          echo "print('ello from blender')" >> test.py
-          blender --background --python test.py
       - name: "Test installer (local)"
         run: |
+          export PATH="blender-2.92.0-linux64:$PATH"
           python install.py --local
           zip -r neuro3d.zip neuro3d
       - uses: "marvinpinto/action-automatic-releases@latest"
