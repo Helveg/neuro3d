@@ -61,7 +61,8 @@ else:
 
 
 from . import animation
-
+from .animation import encoders, properties
+from .animation.frames import time, rtime
 
 class Branch:
     """
