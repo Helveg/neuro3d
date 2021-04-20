@@ -3,11 +3,13 @@ try:
 except:
     raise ImportError("`blenderneuron._blender` can only be imported inside Blender.")
 
+
 def get_blender_version():
     try:
         return bpy.app.version_string.split(".")
     except:
         raise RuntimeError("Blender version could not be determined.")
+
 
 def make_blender_addon():
     import sys

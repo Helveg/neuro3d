@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-import os, sys, shutil
+import os, sys, shutil, urllib.request
 
-print("Cloning Neuro3D repository.")
-os.system("git clone git@github.com:Helveg/neuro3d tmp_n3d")
-os.chdir("tmp_n3d")
-print("Zipping Neuro3D.")
-shutil.make_archive("neuro3d.zip", 'zip', "neuro3d")
-print("Launching Blender, installing.")
-os.system(f"blender --python installer/blender_install.py")
+print("Downloading Neuro3D Blender addon.")
+archive = "https://github.com/Helveg/neuro3d/releases/download/v0.0.1a0/neuro3d.zip"
+with urllib.request.urlopen(archive) as w:
+    with open("neuro3d.zip", 'wb') as f:
+        f.write(w.read())
+try:
+    print("Launching Blender, installing.")
+    os.system(f"blender --background --python installer/blender_install.py")
+finally:
+    os.remove("neuro3d.zip")

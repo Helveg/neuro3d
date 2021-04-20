@@ -14,6 +14,7 @@ class Encoder(abc.ABC):
     def calibrate(cls, *args, **kwargs):
         raise NotImplementedError(f"{cls.__name__} does not support calibration.")
 
+
 class PipeEncoder(Encoder):
     def __init__(self, *encoders):
         self._pipe = encoders
@@ -89,8 +90,10 @@ class RDPEncoder(Encoder):
         time, signal = simplified[0:2]
         return signal, time
 
+
 # Line simplification algorithm using Numpy from:
 # https://github.com/fhirschmann/rdp/issues/7
+
 
 def _line_dists(points, start, end):
     if np.all(start == end):
@@ -110,7 +113,7 @@ def _rdp(M, epsilon=0):
     dmax = dists[index]
 
     if dmax > epsilon:
-        result1 = _rdp(M[:index + 1], epsilon)
+        result1 = _rdp(M[: index + 1], epsilon)
         result2 = _rdp(M[index:], epsilon)
 
         result = np.vstack((result1[:-1], result2))
@@ -118,5 +121,6 @@ def _rdp(M, epsilon=0):
         result = np.array([start, end])
 
     return result
+
 
 # End line simplification

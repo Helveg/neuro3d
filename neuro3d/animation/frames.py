@@ -1,5 +1,6 @@
 import numpy as np, math
 
+
 class TimeInfoError(Exception):
     pass
 
@@ -19,7 +20,9 @@ class KeyFrames:
     @signal.setter
     def signal(self, value):
         if len(value) != len(self._signal):
-            raise ValueError("Can only assign KeyFrame signals when number of frames is the same.")
+            raise ValueError(
+                "Can only assign KeyFrame signals when number of frames is the same."
+            )
         self._signal = np.array(value)
 
 
@@ -50,6 +53,7 @@ class TimeWindow:
 
     def get_frame(self, t):
         return self._f0 + (t - self._t0) * self._fps
+
 
 class TimeSeries:
     def __init__(self, signal, time):

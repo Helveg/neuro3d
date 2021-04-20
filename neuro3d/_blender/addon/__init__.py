@@ -1,54 +1,51 @@
 import bpy
 
-from bpy.props import (StringProperty,
-                       BoolProperty,
-                       IntProperty,
-                       FloatProperty,
-                       FloatVectorProperty,
-                       EnumProperty,
-                       PointerProperty,
-                       )
-from bpy.types import (Panel,
-                       Menu,
-                       Operator,
-                       PropertyGroup,
-                       )
+from bpy.props import (
+    StringProperty,
+    BoolProperty,
+    IntProperty,
+    FloatProperty,
+    FloatVectorProperty,
+    EnumProperty,
+    PointerProperty,
+)
+from bpy.types import (
+    Panel,
+    Menu,
+    Operator,
+    PropertyGroup,
+)
 
 
 # ------------------------------------------------------------------------
 #    Scene Properties
 # ------------------------------------------------------------------------
 
+
 class MyProperties(PropertyGroup):
 
     my_bool: BoolProperty(
-        name="Enable or Disable",
-        description="A bool property",
-        default = False
-        )
+        name="Enable or Disable", description="A bool property", default=False
+    )
 
     my_int: IntProperty(
-        name = "Int Value",
-        description="A integer property",
-        default = 23,
-        min = 10,
-        max = 100
-        )
+        name="Int Value", description="A integer property", default=23, min=10, max=100
+    )
 
     my_float: FloatProperty(
-        name = "Float Value",
-        description = "A float property",
-        default = 23.7,
-        min = 0.01,
-        max = 30.0
-        )
+        name="Float Value",
+        description="A float property",
+        default=23.7,
+        min=0.01,
+        max=30.0,
+    )
 
     my_float_vector: FloatVectorProperty(
-        name = "Float Vector Value",
+        name="Float Vector Value",
         description="Something",
         default=(0.0, 0.0, 0.0),
-        min= 0.0, # float
-        max = 0.1
+        min=0.0,  # float
+        max=0.1,
     )
 
     my_string: StringProperty(
@@ -56,28 +53,31 @@ class MyProperties(PropertyGroup):
         description=":",
         default="",
         maxlen=1024,
-        )
+    )
 
     my_path: StringProperty(
-        name = "Directory",
+        name="Directory",
         description="Choose a directory:",
         default="",
         maxlen=1024,
-        subtype='DIR_PATH'
-        )
+        subtype="DIR_PATH",
+    )
 
     my_enum: EnumProperty(
         name="Dropdown:",
         description="Apply Data to attribute.",
-        items=[ ('OP1', "Option 1", ""),
-                ('OP2', "Option 2", ""),
-                ('OP3', "Option 3", ""),
-               ]
-        )
+        items=[
+            ("OP1", "Option 1", ""),
+            ("OP2", "Option 2", ""),
+            ("OP3", "Option 3", ""),
+        ],
+    )
+
 
 # ------------------------------------------------------------------------
 #    Operators
 # ------------------------------------------------------------------------
+
 
 class WM_OT_HelloWorld(Operator):
     bl_label = "Print Values Operator"
@@ -95,11 +95,13 @@ class WM_OT_HelloWorld(Operator):
         print("string value:", mytool.my_string)
         print("enum state:", mytool.my_enum)
 
-        return {'FINISHED'}
+        return {"FINISHED"}
+
 
 # ------------------------------------------------------------------------
 #    Menus
 # ------------------------------------------------------------------------
+
 
 class OBJECT_MT_CustomMenu(bpy.types.Menu):
     bl_label = "Select"
@@ -109,13 +111,17 @@ class OBJECT_MT_CustomMenu(bpy.types.Menu):
         layout = self.layout
 
         # Built-in operators
-        layout.operator("object.select_all", text="Select/Deselect All").action = 'TOGGLE'
-        layout.operator("object.select_all", text="Inverse").action = 'INVERT'
+        layout.operator(
+            "object.select_all", text="Select/Deselect All"
+        ).action = "TOGGLE"
+        layout.operator("object.select_all", text="Inverse").action = "INVERT"
         layout.operator("object.select_random", text="Random")
+
 
 # ------------------------------------------------------------------------
 #    Panel in Object Mode
 # ------------------------------------------------------------------------
+
 
 class OBJECT_PT_CustomPanel(Panel):
     bl_label = "My Panel"
@@ -140,26 +146,26 @@ class OBJECT_PT_CustomPanel(Panel):
         layout.menu(OBJECT_MT_CustomMenu.bl_idname, text="Presets", icon="SCENE")
         layout.separator()
 
+
 # ------------------------------------------------------------------------
 #    Registration
 # ------------------------------------------------------------------------
 
-classes = (
-    MyProperties,
-    WM_OT_HelloWorld,
-    OBJECT_MT_CustomMenu,
-    OBJECT_PT_CustomPanel
-)
+classes = (MyProperties, WM_OT_HelloWorld, OBJECT_MT_CustomMenu, OBJECT_PT_CustomPanel)
+
 
 def register():
     from bpy.utils import register_class
+
     for cls in classes:
         register_class(cls)
 
     bpy.types.Scene.my_tool = PointerProperty(type=MyProperties)
 
+
 def unregister():
     from bpy.utils import unregister_class
+
     for cls in reversed(classes):
         unregister_class(cls)
     del bpy.types.Scene.my_tool

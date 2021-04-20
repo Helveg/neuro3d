@@ -3,6 +3,7 @@ import bpy
 import numpy as np
 from .. import controller
 
+
 def _get_default_color(name):
     # Color ramps don't exist in 2.9 anymore
     # name = name + '_color_ramp'
@@ -18,19 +19,21 @@ def _get_default_color(name):
 def _get_curve_template(name):
     # TODO: When CellGroups are implemented the curve template should be provided by
     # the CellGroup.
-    curve_template = bpy.data.curves.new(name + "_bezier", type='CURVE')
-    curve_template.dimensions = '3D'
-    curve_template.resolution_u = 2 # self.group.segment_subdivisions
-    curve_template.fill_mode = 'FULL'
-    curve_template.bevel_depth = 1.0 # 0.0 if self.group.as_lines else 1.0
-    curve_template.bevel_resolution = 1.0 # int((self.group.circular_subdivisions - 4) / 2.0)
+    curve_template = bpy.data.curves.new(name + "_bezier", type="CURVE")
+    curve_template.dimensions = "3D"
+    curve_template.resolution_u = 2  # self.group.segment_subdivisions
+    curve_template.fill_mode = "FULL"
+    curve_template.bevel_depth = 1.0  # 0.0 if self.group.as_lines else 1.0
+    curve_template.bevel_resolution = (
+        1.0  # int((self.group.circular_subdivisions - 4) / 2.0)
+    )
     # Not found in 2.91:
     # curve_template.show_normal_face = False
     # curve_template.show_handles = False
     return curve_template
 
-class CurveContainer:
 
+class CurveContainer:
     def __init__(
         self,
         cell,
@@ -41,7 +44,8 @@ class CurveContainer:
         recursive=True,
         origin_type="center",
         closed_ends=True,
-        container_material=None):
+        container_material=None,
+    ):
 
         self.name = controller.get_blender_name(cell)
         self.smooth_sections = smooth_sections
@@ -108,13 +112,14 @@ class CurveContainer:
                     bpy.data.actions.remove(mat.animation_data.action)
 
                 # remove material node animation
-                if mat.node_tree is not None and mat.node_tree.animation_data is not None:
+                if (
+                    mat.node_tree is not None
+                    and mat.node_tree.animation_data is not None
+                ):
                     bpy.data.actions.remove(mat.node_tree.animation_data.action)
 
                 # remove material
                 bpy.data.materials.remove(mat)
-
-
 
         # curve
         bpy.data.curves.remove(ob.data)
@@ -131,7 +136,7 @@ class CurveContainer:
         lengths = end - start
 
         # Versor extension
-        length = sqrt(np.power(lengths,2).sum())
+        length = sqrt(np.power(lengths, 2).sum())
 
         # Extend in the same direction by a small amount
         if length > 0:
@@ -147,7 +152,7 @@ class CurveContainer:
     def add_spline(self, coords, radii, smooth):
         curve = self.curve
 
-        sec_spline = curve.splines.new('BEZIER')
+        sec_spline = curve.splines.new("BEZIER")
 
         # This line is necessary due to a bug in Blender
         # see: https://developer.blender.org/T54112
@@ -163,32 +168,31 @@ class CurveContainer:
             cap2 = self.diam0version(coords[-2], coords[-1])
 
             coords = np.concatenate(([cap1], coords, [cap2]))
-            radii = np.concatenate(([0],radii,[0]))
+            radii = np.concatenate(([0], radii, [0]))
 
         # Flatten the coords back (needed by the foreach_set() functions below)
-        coords.shape = (-1)
+        coords.shape = -1
 
         bezier_points = sec_spline.bezier_points
 
         # Allocate space for bezier points
-        #bezier_points.clear() # can't clear the one initial point
-        bezier_points.add(len(radii)-1)
+        # bezier_points.clear() # can't clear the one initial point
+        bezier_points.add(len(radii) - 1)
 
-        bezier_points.foreach_set('radius', radii)
-        bezier_points.foreach_set('co', coords)
+        bezier_points.foreach_set("radius", radii)
+        bezier_points.foreach_set("co", coords)
 
         if not smooth:
             # Fast
-            bezier_points.foreach_set('handle_right', coords)
-            bezier_points.foreach_set('handle_left', coords)
+            bezier_points.foreach_set("handle_right", coords)
+            bezier_points.foreach_set("handle_left", coords)
 
         else:
             # Slower
             for p in bezier_points:
-                p.handle_right_type = p.handle_left_type = 'AUTO'
+                p.handle_right_type = p.handle_left_type = "AUTO"
 
         return sec_spline
-
 
     @staticmethod
     def create_material(name, color, brightness):
@@ -217,17 +221,17 @@ class CurveContainer:
         nodes.clear()
 
         # Cycles nodes
-        cl_out = nodes.new('ShaderNodeOutputMaterial')
-        cl_emit = nodes.new('ShaderNodeEmission')
+        cl_out = nodes.new("ShaderNodeOutputMaterial")
+        cl_emit = nodes.new("ShaderNodeEmission")
         cl_emit.location = [-200, 0]
-        cl_emit.inputs['Strength'].default_value = brightness
-        cl_emit.inputs['Color'].default_value = list(mat.diffuse_color)
+        cl_emit.inputs["Strength"].default_value = brightness
+        cl_emit.inputs["Color"].default_value = list(mat.diffuse_color)
 
         # cl_trans = nodes.new('ShaderNodeBsdfTransparent')
         # cl_trans.location = [-200, 100]
         # links.new(cl_trans.outputs['BSDF'], cl_out.inputs['Surface'])
 
-        links.new(cl_emit.outputs['Emission'], cl_out.inputs['Surface'])
+        links.new(cl_emit.outputs["Emission"], cl_out.inputs["Surface"])
 
         # Not Blender 2.9
         # # Blender render nodes
@@ -245,7 +249,7 @@ class CurveContainer:
     def add_material_to_object(self, material):
         mats = self.curve.materials
         mats.append(material)
-        mat_idx = len(mats)-1
+        mat_idx = len(mats) - 1
         return mat_idx
 
     def to_global(self, local_coords):
@@ -286,8 +290,13 @@ class CurveContainer:
             spline = self.curve.splines[spline_i]
 
         except IndexError:
-            print("Could not find spline with index " + str(spline_i) + " in " + self.name +
-                  ". This can happen if a spline is deleted in Edit Mode.")
+            print(
+                "Could not find spline with index "
+                + str(spline_i)
+                + " in "
+                + self.name
+                + ". This can happen if a spline is deleted in Edit Mode."
+            )
             raise
 
         point_source = spline.bezier_points
@@ -312,7 +321,7 @@ class CurveContainer:
         # Get radii
         radii = np.zeros(num_coords)
         point_source.foreach_get("radius", radii)
-        root.radii  = (radii[1:-1] if self.closed_ends else radii).tolist()
+        root.radii = (radii[1:-1] if self.closed_ends else radii).tolist()
         del radii
 
         # Cleanup before recursion
@@ -328,7 +337,9 @@ class CurveContainer:
         branch._id = len(self._branches)
         self._branches.append(branch)
 
-    def add_branch(self, branch, recursive=True, in_top_level=True, origin_type="center"):
+    def add_branch(
+        self, branch, recursive=True, in_top_level=True, origin_type="center"
+    ):
         # Reshape the coords to be n X 3 array (for xyz)
         coords = np.array(branch.coords)
         coords.shape = (-1, 3)
@@ -342,9 +353,7 @@ class CurveContainer:
         # If material is not provided, create one
         if self.assigned_container_material is None:
             material = CurveContainer.create_material(
-                str(branch),
-                self.default_color,
-                self.default_brightness
+                str(branch), self.default_color, self.default_brightness
             )
 
         # If material is provided, assign it to the spline
@@ -356,7 +365,6 @@ class CurveContainer:
 
         # Assign the material to the new spline
         spline.material_index = mat_idx
-
 
         # Save spline index for later lookup
         # Note: In Blender, using edit-mode on a curve object, results in creation of
@@ -375,7 +383,7 @@ class CurveContainer:
             for child in branch.children:
                 self.add_branch(child, recursive=True, in_top_level=False)
 
-    def set_origin(self, coords, type = "center"):
+    def set_origin(self, coords, type="center"):
         if type == "center":
             point_count = coords.shape[0]
 
