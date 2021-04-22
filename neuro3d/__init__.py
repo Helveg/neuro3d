@@ -140,13 +140,13 @@ class Cell:
     branching out into child Branches.
     """
 
-    def __init__(self, roots, position=None, rotation=None):
-        if position is None:
-            position = np.array([0, 0, 0])
+    def __init__(self, roots, location=None, rotation=None):
+        if location is None:
+            location = np.array([0, 0, 0])
         if rotation is None:
             rotation = np.array([0, 0, 0])
         self._roots = roots
-        self._position = position
+        self._location = location
         self._rotation = rotation
 
     def register(self):
@@ -170,16 +170,16 @@ class Cell:
         )
 
     @property
-    def position(self):
+    def location(self):
         if hasattr(self, "curve_container"):
-            return self.curve_container._bn_obj.location
-        return self._position
+            return controller.get_location(self.curve_container)
+        return self._location
 
-    @position.setter
-    def position(self, value):
+    @location.setter
+    def location(self, value):
         if hasattr(self, "curve_container"):
-            self.curve_container._bn_obj.location = value
-        self._rotation = value
+            return controller.set_location(self.curve_container, value)
+        self._location = value
 
     @property
     def rotation(self):
