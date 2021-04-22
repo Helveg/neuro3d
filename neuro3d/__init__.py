@@ -10,7 +10,7 @@ except:
 else:
     inside_blender = True
 
-# `bl_info` is read without evaluating the module. The BlenderNEURON installer will
+# `bl_info` is read without evaluating the module. The Neuro3D installer will
 # replace the `blender` and `location` key with what is appropriate for the detected
 # Blender version so that our addon is compatible across Blender versions.
 # `bl_info` needs to be defined at the module-level of the file aswell.
@@ -18,7 +18,7 @@ bl_info = {
     "name": "Neuro3D",
     "description": "Visualization of neurons and simulation data",
     "author": "Robin De Schepper",
-    "version": (3, 0),
+    "version": (0, 0, 3),
     "blender": (2, 91, 0),
     "location": "View3D > Properties > Neuro3D",
     "wiki_url": "https://neuro3d.readthedocs.io/",
