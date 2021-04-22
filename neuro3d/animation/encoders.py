@@ -1,10 +1,21 @@
 import abc
 import numpy as np
-
+from . import frames
 
 class Encoder(abc.ABC):
+    def __init_subclass__(cls, operator=None, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if operator is not None:
+            def op(*args, **kwargs):
+                return cls(*args, **kwargs)
+
+            op.__name__ = operator
+            op.__qualname__ = operator
+            op.__doc__ = cls.__doc__
+            globals()[operator] = op
+
     @abc.abstractmethod
-    def encode(self, signal, time=None):
+    def encode(self, signal, time):
         pass
 
     def pipe(self, *encoders):
@@ -15,7 +26,7 @@ class Encoder(abc.ABC):
         raise NotImplementedError(f"{cls.__name__} does not support calibration.")
 
 
-class PipeEncoder(Encoder):
+class PipeEncoder(Encoder, operator="pipe"):
     def __init__(self, *encoders):
         self._pipe = encoders
 
@@ -25,7 +36,7 @@ class PipeEncoder(Encoder):
         return signal, time
 
 
-class NormEncoder(Encoder):
+class NormEncoder(Encoder, operator="norm"):
     def encode(self, signal, time):
         signal = np.array(signal, dtype=float)
         # Normalize to calibration or to signal if not calibrated
@@ -42,7 +53,7 @@ class NormEncoder(Encoder):
         self._cmax = max
 
 
-class StdDevEncoder(Encoder):
+class StdDevEncoder(Encoder, operator="stdev"):
     def __init__(self, mean=1.0, scale=1.0):
         self._mean = mean
         self._scale = scale
@@ -52,9 +63,7 @@ class StdDevEncoder(Encoder):
     def encode(self, signal, time):
         stdev = np.std(signal) if self._cstd is None else self._cstd
         mean = np.mean(signal) if self._cmean is None else self._cmean
-        print("cal?", stdev, mean)
         signal = self._mean + (signal - mean) * self._scale / stdev
-        print("std enc:", np.min(signal), np.max(signal))
         return signal, time
 
     def calibrate(self, mean, stdev):
@@ -62,7 +71,7 @@ class StdDevEncoder(Encoder):
         self._cstd = stdev
 
 
-class ClipEncoder(Encoder):
+class ClipEncoder(Encoder, operator="clip"):
     def __init__(self, min=None, max=None):
         self._min = min
         self._max = max
@@ -75,20 +84,22 @@ class ClipEncoder(Encoder):
         return signal, time
 
 
-class RDPEncoder(Encoder):
+class RDPEncoder(Encoder, operator="rdp"):
     def __init__(self, epsilon=0.0):
         self._epsilon = epsilon
 
     def encode(self, signal, time):
+        import plotly.graph_objs as go
         if len(signal) == 0:
             return np.zeros(0), np.zeros(0)
+
         # Make a matrix where times and values are columns
-        formatted = np.column_stack((time, signal))
+        formatted = np.column_stack((time.as_array(), signal))
         # Run simplification algorithm
-        simplified = _rdp(formatted, epsilon).T
+        simplified = _rdp(formatted, self._epsilon).T
         # Split the result matrix back to individual times and values columns
         time, signal = simplified[0:2]
-        return signal, time
+        return signal, frames.time(time)
 
 
 # Line simplification algorithm using Numpy from:
@@ -105,7 +116,6 @@ def _line_dists(points, start, end):
 
 
 def _rdp(M, epsilon=0):
-    M = np.array(M)
     start, end = M[0], M[-1]
     dists = _line_dists(M, start, end)
 

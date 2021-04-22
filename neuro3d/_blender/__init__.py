@@ -20,5 +20,6 @@ def make_blender_addon():
         if name.startswith("patch_"):
             patch(version, addon, controller)
 
-    # Explicitly return the object put into `sys.modules` as if executing `import addon`
+    # Explicitly return the object put into `sys.modules` as if executing
+    # `import addon, controller`
     return sys.modules[addon.__name__], sys.modules[controller.__name__]
