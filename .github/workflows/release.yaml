@@ -1,0 +1,32 @@
+name: "release"
+
+on:
+  push:
+    branches:
+      - "ci/pre"
+
+jobs:
+  release:
+    name: "Release"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Install dependencies"
+        run: pip install ci/requirements.txt
+      - name: "Prepare release"
+        id: tagged
+        run: |
+          tag=`python ci/release.py ${{ secrets.GITHUB_TOKEN }} --tag`
+          echo "What did we get: $tag"
+          make_pre=`python ci/release.py ${{ secrets.GITHUB_TOKEN }} --make-pre`
+          echo "::set-output name=tag::v${tag}"
+          echo "::set-output name=make_pre::v${make_pre}"
+          zip -r neuro3d.zip neuro3d
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ steps.tagged.outputs.tag }}
+          prerelease: ${{ steps.tagged.outputs.make_pre }}
+          title: "Release ${{ steps.tagged.outputs.tag }}"
+          files: |
+            neuro3d.zip
