@@ -28,14 +28,12 @@ class KeyFrames:
 
 
 class FrameWindow:
-    def __init__(self, t_start, t_stop, dt=0.0001, fps=24, f_start=0):
+    def __init__(self, f_start, f_stop, t_start, t_stop):
         self._t0 = t_start
         self._tn = t_stop
-        self._dt = dt
-        self._fps = fps
-        self._spf = 1 / fps
-        self._ft = int((t_stop - t_start) * fps)
         self._f0 = f_start
+        self._fn = f_stop
+        self._a = (self._fn - self._f0) / (self._tn - self._t0)
 
     def iterate_keyframes(self, keyframes):
         yield from zip(map(self.get_frame, keyframes._time), keyframes._signal)
@@ -44,18 +42,44 @@ class FrameWindow:
         return math.floor((self._tn - self._t0) * self._fps)
 
     def get_frame(self, t):
-        return self._f0 + (t - self._t0) * self._fps
+        return int(self._f0 + (t - self._t0) * self._a)
 
 
 class TimeSignal:
-    def __init__(self, signal):
-        self.signal = signal
+    """
+    Class for optimized handling of time signals in time series. Represent many
+    simulation signals with just 1 shared underlying array, or even replace the
+    array by a simplified constant memory data structure like the
+    :class:`.frames.PeriodicTimeSignal`
+    """
+    def __init__(self, signal, mask=None, copy=False):
+        self.signal = signal.copy() if copy else signal
+        self._mask = mask
 
     def __iter__(self):
         return iter(self.signal)
 
-    def np_arr(self):
-        return self.signal.copy()
+    def __getitem__(self, slice):
+        if self._mask is None:
+            return self.signal[slice]
+        else:
+            return self.signal[self._mask][slice]
+
+    def as_array(self, copy=True):
+        if self._mask is None:
+            return self.signal.copy() if copy else self.signal
+        else:
+            return self.signal[self._mask]
+
+    def window(self, start, stop, copy=False):
+        mask = (self.signal >= start) & (self.signal <= stop)
+        return TimeSignal(self.signal, mask, copy)
+
+    def as_mask(self):
+        if self._mask is not None:
+            return self._mask
+        else:
+            return np.ones(self.signal.shape, dtype=bool)
 
 
 class PeriodicTimeSignal(TimeSignal):
@@ -70,8 +94,13 @@ class PeriodicTimeSignal(TimeSignal):
             r += self.dt
             yield r
 
-    def np_arr(self):
+    def as_array(self):
         return np.fromiter(self, dtype=float)
+
+    def window(self, start, stop):
+        self.start = start
+        self.stop = stop
+        return self
 
 
 def time(signal):

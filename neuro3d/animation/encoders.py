@@ -90,13 +90,11 @@ class RDPEncoder(Encoder, operator="rdp"):
 
     def encode(self, signal, time):
         import plotly.graph_objs as go
-        fig = go.Figure()
-        fig.add_scatter(x=time.np_arr(), y=signal)
         if len(signal) == 0:
             return np.zeros(0), np.zeros(0)
 
         # Make a matrix where times and values are columns
-        formatted = np.column_stack((time.np_arr(), signal))
+        formatted = np.column_stack((time.as_array(), signal))
         # Run simplification algorithm
         simplified = _rdp(formatted, self._epsilon).T
         # Split the result matrix back to individual times and values columns
