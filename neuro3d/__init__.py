@@ -170,6 +170,19 @@ class Cell:
         )
 
     @property
+    def branches(self):
+        """
+        List of :class:`branches <.Branch>` associated with this cell.
+        """
+        return self.curve_container._branches.copy()
+
+    @branches.setter
+    def branches(self):
+        raise NotImplementedError(
+            "Manipulating the Blender object state not supported yet."
+        )
+
+    @property
     def location(self):
         if hasattr(self, "curve_container"):
             return controller.get_location(self.curve_container)

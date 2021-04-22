@@ -37,6 +37,10 @@ class PipeEncoder(Encoder, operator="pipe"):
 
 
 class NormEncoder(Encoder, operator="norm"):
+    def __init__(self, min=0, max=1):
+        self._min = min
+        self._max = max
+
     def encode(self, signal, time):
         signal = np.array(signal, dtype=float)
         # Normalize to calibration or to signal if not calibrated
@@ -44,13 +48,25 @@ class NormEncoder(Encoder, operator="norm"):
         m = max(signal) if self._cmax is None else self._cmax
         if m != 0:
             signal /= m
-        signal += self._min
-        signal *= self._max
+        if self._min != 0:
+            signal += self._min
+        if self._max != 1:
+            signal *= self._max
+        print(min(signal), max(signal))
         return signal, time
 
     def calibrate(self, min, max):
         self._cmin = min
         self._cmax = max
+
+
+class InspectEncoder(Encoder, operator="tap"):
+    def __init__(self, f):
+        self._f = f
+
+    def encode(self, signal, time):
+        f(signal, time)
+        return signal, time
 
 
 class StdDevEncoder(Encoder, operator="stdev"):
@@ -69,6 +85,25 @@ class StdDevEncoder(Encoder, operator="stdev"):
     def calibrate(self, mean, stdev):
         self._cmean = mean
         self._cstd = stdev
+
+
+class MultEncoder(Encoder, operator="mult"):
+    def __init__(self, scalar):
+        self._scalar = scalar
+
+    def encode(self, signal, time):
+        signal *= self._scalar
+        return signal, time
+
+
+class SqrtEncoder(Encoder, operator="sqrt"):
+    def __init__(self, min=None, max=None):
+        self._min = min
+        self._max = max
+
+    def encode(self, signal, time):
+        signal = np.sqrt(signal)
+        return signal, time
 
 
 class ClipEncoder(Encoder, operator="clip"):
