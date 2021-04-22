@@ -33,13 +33,19 @@ else:
 try:
     with open("_tmp_n3d_blenderinstall.py", "w") as f:
         f.write("""
-import bpy, os
+try:
+    import bpy, os
 
-bpy.ops.preferences.addon_install(
-    filepath=os.path.abspath("neuro3d.zip"), overwrite=True
-)
-bpy.ops.preferences.addon_enable(module="neuro3d")
-bpy.ops.wm.save_userpref()
+    bpy.ops.preferences.addon_install(
+        filepath=os.path.abspath("neuro3d.zip"), overwrite=True
+    )
+    bpy.ops.preferences.addon_enable(module="neuro3d")
+    bpy.ops.wm.save_userpref()
+except:
+    import sys, traceback
+
+    print(traceback.format_exc(), file=sys.stderr, flush=True)
+    exit(1)
 """)
     try:
         print("Launching Blender, installing zip.")
