@@ -1,10 +1,8 @@
-try:
-    import bpy
-except:
-    raise ImportError("`neuro3d._blender` can only be imported inside Blender.")
-
-
 def get_blender_version():
+    try:
+        import bpy
+    except:
+        raise ImportError("`neuro3d._blender` can only be imported inside Blender.")
     try:
         return bpy.app.version_string.split(".")
     except:

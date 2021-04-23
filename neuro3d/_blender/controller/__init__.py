@@ -1,3 +1,8 @@
+try:
+    import bpy
+except:
+    raise ImportError("`neuro3d._blender` can only be imported inside Blender.")
+
 from .curve_container import CurveContainer, _get_curve_template, _get_default_color
 
 _objects = {}
