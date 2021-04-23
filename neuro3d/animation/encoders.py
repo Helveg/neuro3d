@@ -52,7 +52,6 @@ class NormEncoder(Encoder, operator="norm"):
             signal += self._min
         if self._max != 1:
             signal *= self._max
-        print(min(signal), max(signal))
         return signal, time
 
     def calibrate(self, min, max):
