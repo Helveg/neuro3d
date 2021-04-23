@@ -6,7 +6,7 @@ _t(
         BackendError=_e(
             MultiplePriorityError=_e("backends"),
             BackendSetError=_e(),
-            UnknownBackendError=_e()
+            UnknownBackendError=_e("name")
         )
     )
 )

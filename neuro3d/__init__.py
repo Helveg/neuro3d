@@ -2,6 +2,9 @@ __version__ = "0.0.4"
 
 import warnings
 import numpy as np
+from .backend import establish_backends, get_backend, RequiresSupport
+
+establish_backends()
 
 try:
     import bpy
@@ -30,7 +33,7 @@ bl_info = {
 if inside_blender:
     from ._blender import make_blender_addon
 
-    addon, controller = make_blender_addon()
+    addon = make_blender_addon()
 
     def register():
         addon.register()
@@ -39,32 +42,15 @@ if inside_blender:
         addon.unregister()
 
 
-else:
-
-    class Reporter:
-        @property
-        def is_available(self):
-            return False
-
-        def __getattr__(self, name):
-            warnings.warn(
-                "Controller can't be used outside of Blender environment", stacklevel=2
-            )
-            return Reporter()
-
-        def __call__(self, *args, **kwargs):
-            warnings.warn(
-                "Controller can't be used outside of Blender environment", stacklevel=2
-            )
-
-    controller = Reporter()
-
+_startup_backend = get_backend()
+controller = _startup_backend.get_controller()
 
 from . import animation
-from .animation import encoders, properties
+from .backend import set_backend
+from .animation import encoders
 from .animation.frames import time, rtime
 
-class Branch:
+class Branch(RequiresSupport, requires=[]):
     """
     A branch is a piece of uninterrupted unbranching cable used to construct
     :class:`cells <.Cell>`.
@@ -134,7 +120,7 @@ class Branch:
         return d
 
 
-class Cell:
+class Cell(RequiresSupport, requires=["create_cell", "get_location", "set_location", "get_rotation", "set_rotation"]):
     """
     A cell is the 3D representation of a collection of root :class:`Branches <.Branch>`,
     branching out into child Branches.

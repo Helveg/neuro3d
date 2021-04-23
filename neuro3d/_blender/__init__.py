@@ -11,13 +11,13 @@ def get_blender_version():
 
 def make_blender_addon():
     import sys
-    from . import patches, addon, controller
+    from . import patches, addon
 
     version = get_blender_version()
     for name, patch in patches.__dict__.items():
         if name.startswith("patch_"):
-            patch(version, addon, controller)
+            patch(version, addon)
 
     # Explicitly return the object put into `sys.modules` as if executing
-    # `import addon, controller`
-    return sys.modules[addon.__name__], sys.modules[controller.__name__]
+    # `import addon`
+    return sys.modules[addon.__name__]
