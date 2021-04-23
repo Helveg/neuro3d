@@ -33,6 +33,7 @@ setup(
     license="GPLv3",
     install_requires=[
         "numpy",
+        "errr"
     ],
     classifiers=[
         "Intended Audience :: Science/Research",
