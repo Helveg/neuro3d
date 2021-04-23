@@ -35,6 +35,9 @@ setup(
         "numpy",
         "errr"
     ],
+    entry_points={
+        "neuro3d.backends": ["blender = neuro3d._blender.backend:BlenderBackend"]
+    },
     classifiers=[
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",

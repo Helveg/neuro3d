@@ -1,8 +1,7 @@
-from . import encoders, frames, properties
+from . import encoders, frames
+from ..exceptions import *
+import abc
 
-
-class CalibrationNotSupportedError(Exception):
-    pass
 
 
 class Animator:
@@ -26,3 +25,9 @@ def create_animator(encoder=None, property=None, **kwargs):
     if property is None:
         property = properties.EmissionProperty()
     return Animator(encoder, property, **kwargs)
+
+
+class Property(abc.ABC):
+    @abc.abstractmethod
+    def keyframe_insert(self, obj, frame, value):
+        pass

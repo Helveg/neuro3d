@@ -6,7 +6,11 @@ _t(
         BackendError=_e(
             MultiplePriorityError=_e("backends"),
             BackendSetError=_e(),
-            UnknownBackendError=_e("name")
-        )
+            BackendUnavailableError=_e("backend"),
+            UnknownBackendError=_e("name"),
+        ),
+        AnimationError=_e(
+            CalibrationNotSupportedError=_e(),
+        ),
     )
 )

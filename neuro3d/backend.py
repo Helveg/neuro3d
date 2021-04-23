@@ -6,7 +6,7 @@ _backend = None
 
 @functools.lru_cache()
 def _get_backends():
-    return [entry_point.advert() for entry_point in pkg_resources.iter_entry_points("neuro3d.backend")] + [FallbackBackend()]
+    return [entry_point.load()() for entry_point in pkg_resources.iter_entry_points("neuro3d.backends")] + [FallbackBackend()]
 
 
 def get_backends():
@@ -24,7 +24,7 @@ def establish_backends():
     if len(prio) > 1:
         raise MultipleBackendPriorityError(", ".join(f"'{b.name}'" for b in prio) + " all claim priority as backend.", prio)
     elif len(prio):
-        return set_backend(prio[0])
+        return _set_backend(prio[0])
     # Set a fallback backend
     _set_backend(FallbackBackend())
     # Clear the flag that the backend has already been set
@@ -37,6 +37,8 @@ def _set_backend(backend):
     global __set_backend, _backend
     if __set_backend:
         raise BackendSetError(f"The backend has already been set to '{_backend.name}'")
+    if not backend.available:
+        raise BackendUnavailableError(f"The %backend.name% backend is not available. Available backends: " + ", ".join(f"'{b.name}'" for b in _get_backends() if b.available), backend)
     __set_backend = True
     _backend = backend
     backend.initialize()
@@ -48,7 +50,7 @@ def set_backend(name):
     try:
         backend = backends[name]
     except KeyError:
-        raise UnknownBackendError("Unknown backend '%name%'. Known backends: " + ", ".join(f"{b}" for b in backends), name)
+        raise UnknownBackendError("Unknown backend '%name%'. Known backends: " + ", ".join(f"'{b}'" for b in backends), name) from None
     return _set_backend(backend)
 
 

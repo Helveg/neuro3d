@@ -1,11 +1,4 @@
-import abc, numpy as np
-
-
-class Property(abc.ABC):
-    @abc.abstractmethod
-    def keyframe_insert(self, obj, frame, value):
-        pass
-
+from neuro3d.animation import Property
 
 class ColorProperty(Property):
     def keyframe_insert(self, obj, frame, value):
