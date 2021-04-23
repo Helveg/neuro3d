@@ -46,6 +46,7 @@ _startup_backend = get_backend()
 controller = _startup_backend.get_controller()
 
 from . import animation
+from .render import render
 from .backend import set_backend
 from .animation import encoders
 from .animation.frames import time, rtime

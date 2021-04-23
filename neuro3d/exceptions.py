@@ -4,6 +4,7 @@ _t(
     globals(),
     Neuro3DError=_e(
         BackendError=_e(
+            FallbackError=_e(),
             MultiplePriorityError=_e("backends"),
             BackendSetError=_e(),
             BackendUnavailableError=_e("backend"),

@@ -1,7 +1,7 @@
 import pkg_resources, functools, abc
 from .exceptions import *
 
-__set_backend = None
+__set_backend = False
 _backend = None
 
 @functools.lru_cache()
@@ -24,6 +24,7 @@ def establish_backends():
     if len(prio) > 1:
         raise MultipleBackendPriorityError(", ".join(f"'{b.name}'" for b in prio) + " all claim priority as backend.", prio)
     elif len(prio):
+        print("What is?", __set_backend)
         return _set_backend(prio[0])
     # Set a fallback backend
     _set_backend(FallbackBackend())
@@ -35,6 +36,8 @@ def _set_backend(backend):
     import neuro3d
 
     global __set_backend, _backend
+    print("Whyyyyyyyyy", __set_backend)
+    # raise Exception("Where is this first set from then?")
     if __set_backend:
         raise BackendSetError(f"The backend has already been set to '{_backend.name}'")
     if not backend.available:
@@ -68,7 +71,7 @@ class Backend(abc.ABC):
         pass
 
 
-class FallbackBackend(Backend):
+class FallbackBackend:
     priority = False
     name = "fallback"
     available = True
@@ -83,6 +86,9 @@ class FallbackBackend(Backend):
     @functools.lru_cache()
     def get_controller(self):
         return FallbackController()
+
+    def __getattr__(self, attr):
+        raise FallbackError("Operation not supported without backend.")
 
 
 class Controller(abc.ABC):

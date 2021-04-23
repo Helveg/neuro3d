@@ -1,6 +1,6 @@
 from ..render import BackendRender
 from neuro3d.backend import Backend
-import functools
+import functools, subprocess
 
 class BlenderRender(BackendRender):
     def render_portion(self, rank, size):
@@ -23,7 +23,12 @@ class BlenderBackend(Backend):
 
     @property
     def available(self):
-        return False
+        try:
+            subprocess.run(["blender", "--version"], capture_output=True, timeout=3)
+        except subprocess.CalledProcessError:
+            return False
+        else:
+            return True
 
     @property
     def priority(self):
