@@ -4,7 +4,9 @@ import warnings
 import numpy as np
 from .backend import establish_backends, get_backend, RequiresSupport
 
+print("Checking backends")
 establish_backends()
+print("Back from backends")
 
 try:
     import bpy
@@ -50,6 +52,10 @@ from .render import render
 from .backend import set_backend
 from .animation import encoders
 from .animation.frames import time, rtime
+
+class HasBackendObject:
+    def __getstate__(self):
+        return {k: v for k, v in self.__dict__.items() if k != "_backend_obj"}
 
 class Branch(RequiresSupport, requires=[]):
     """
@@ -121,7 +127,7 @@ class Branch(RequiresSupport, requires=[]):
         return d
 
 
-class Cell(RequiresSupport, requires=["create_cell", "get_location", "set_location", "get_rotation", "set_rotation"]):
+class Cell(RequiresSupport, HasBackendObject, requires=["create_cell", "get_location", "set_location", "get_rotation", "set_rotation"]):
     """
     A cell is the 3D representation of a collection of root :class:`Branches <.Branch>`,
     branching out into child Branches.
@@ -136,12 +142,15 @@ class Cell(RequiresSupport, requires=["create_cell", "get_location", "set_locati
         self._location = location
         self._rotation = rotation
 
+    def __getstate__(self):
+        return dict()
+
     def register(self):
         """
         Register the cell with the controller to create its Blender object and manage its
         state. Only available inside Blender.
         """
-        controller.register_cell(self)
+        controller.create_cell(self)
 
     @property
     def roots(self):
@@ -202,6 +211,7 @@ def create_branch(*args, **kwargs):
     """
     Create a new :class:`.Branch`.
     """
+    print("???", Branch(*args, **kwargs))
     return Branch(*args, **kwargs)
 
 

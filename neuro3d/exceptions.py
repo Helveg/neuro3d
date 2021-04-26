@@ -8,6 +8,7 @@ _t(
             MultiplePriorityError=_e("backends"),
             BackendSetError=_e(),
             BackendUnavailableError=_e("backend"),
+            MissingControllerSupport=_e(),
             UnknownBackendError=_e("name"),
         ),
         AnimationError=_e(

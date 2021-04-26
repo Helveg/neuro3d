@@ -1,8 +1,8 @@
 from math import sqrt, pi
 import bpy
 import numpy as np
-from .. import controller
 
+controller = None
 
 def _get_default_color(name):
     # Color ramps don't exist in 2.9 anymore
@@ -46,8 +46,12 @@ class CurveContainer:
         closed_ends=True,
         container_material=None,
     ):
+        from ..backend import get_backend
 
-        self.name = controller.get_blender_name(cell)
+        global controller
+        controller = get_backend().get_controller()
+
+        self.name = controller.get_name(cell)
         self.smooth_sections = smooth_sections
         self.closed_ends = closed_ends
         self.assigned_container_material = container_material
@@ -57,7 +61,7 @@ class CurveContainer:
 
         # copy the curve template and make a new blender object out of it
         curve_template = _get_curve_template(self.name)
-        self._bn_obj = bpy.data.objects.new(self.name, curve_template)
+        self._backend_obj = bpy.data.objects.new(self.name, curve_template)
 
         self.linked = False
         self.material_indices = []
@@ -70,7 +74,7 @@ class CurveContainer:
         for root in cell.roots:
             self.add_branch(root, recursive, in_top_level=True, origin_type=origin_type)
 
-        bpy.context.scene.collection.objects.link(self._bn_obj)
+        bpy.context.scene.collection.objects.link(self._backend_obj)
 
     def get_object(self):
         return bpy.data.objects.get(self.name)

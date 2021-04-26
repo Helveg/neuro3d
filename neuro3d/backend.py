@@ -108,6 +108,8 @@ class RequiresSupport:
     def __new__(cls, *args, **kwargs):
         backend = get_backend()
         controller = backend.get_controller()
-        missing = [r for r in cls._support_requirements if r not in controller.__dict__]
+        print("Found controller:", controller, controller.__dict__)
+        missing = [r for r in cls._support_requirements if not hasattr(controller, r)]
         if missing:
             raise MissingControllerSupport(f"Can't create {cls.__name__} because {backend.name} misses {', '.join(missing)} to support it.")
+        return super().__new__(cls)
