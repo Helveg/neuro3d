@@ -198,6 +198,31 @@ class Cell(RequiresSupport, requires=["create_cell", "get_location", "set_locati
             root.__dissolve__()
 
 
+class Plot:
+    def __init__(self, origin, scale, frame_window, res=None):
+        if res is None:
+            self._res = (1000, 300)
+        else:
+            self._res = res
+        self._origin = origin
+        self._scale = scale
+        self._window = frame_window
+        self._traces = []
+
+    def add_trace(self, signal, time):
+        traces = PlotSerie(signal, time)
+        self._traces.append(traces)
+
+    def register(self):
+        controller.register_plot(self)
+
+
+class PlotSeries:
+    def __init__(self, signal, time):
+        self._signal = signal
+        self._time = time
+
+
 def create_branch(*args, **kwargs):
     """
     Create a new :class:`.Branch`.
