@@ -247,6 +247,8 @@ def require(id):
         try:
             obj = controller.find(id)
         except IdError:
+            obj = None
+        if obj is None:
             obj = f(id)
             if hasattr(obj, "__register__"):
                 obj.__register__(id)
