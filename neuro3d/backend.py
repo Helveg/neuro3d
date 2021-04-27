@@ -77,6 +77,14 @@ class Backend(abc.ABC):
     def get_properties(self):
         pass
 
+    @abc.abstractmethod
+    def find(self, id):
+        pass
+
+    @abc.abstractmethod
+    def register_object(self, obj, id=None):
+        pass
+
 
 class FallbackBackend:
     priority = False

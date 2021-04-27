@@ -5,7 +5,8 @@ except ImportError:
 
 from .curve_container import CurveContainer, _get_curve_template, _get_default_color
 from neuro3d.backend import Controller
-import functools, pickle, base64
+from neuro3d.exceptions import *
+import functools, pickle, base64, numpy as np
 
 
 def _load(obj):
@@ -53,16 +54,33 @@ class BlenderController(Controller):
     @property
     @functools.lru_cache()
     def state(self):
-        return SceneState(bpy.context.scene)
+        return SceneState(self.scene)
 
-    def register_object(self, obj):
-        id = self.state._next_object_id
-        self.state._objects[id] = obj
-        self.state._next_object_id += 1
+    @property
+    @functools.lru_cache()
+    def scene(self):
+        return bpy.context.scene
+
+    def find(self, id):
+        if id not in self.state._objects:
+            raise IdMissingError("id %id% is not registered.", id)
+        return self.state._objects[id]
+
+    def register_object(self, obj, id=None):
+        if id is None:
+            id = self.state._next_object_id
+            self.state._objects[id] = obj
+            self.state._next_object_id += 1
+        elif id in self.state._objects:
+            obj = self.state._objects[id]
+            raise IdTakenError("%id% is already taken by %obj%", id, obj)
+        else:
+            self.state._objects[id] = obj
+            self.state._next_object_id = max(self.state._next_object_id, id + 1)
         return id
 
-    def create_cell(self, cell):
-        id = self.register_object(cell)
+    def create_cell(self, id, cell):
+        self.register_object(cell, id)
         cell._id = id
         cc = self._create_curve_container(cell)
         _init_pos, _init_rot = cell.location, cell.rotation
@@ -72,15 +90,35 @@ class BlenderController(Controller):
         cell.location = _init_pos
         cell.rotation = _init_rot
 
-    def register_plot(self, plot):
-        id = self.register_object(plot)
+    def create_plot(self, id, plot):
+        self.register_object(plot, id)
         plot._id = id
-        cc = self._create_curve_container(cell)
-        _init_pos, _init_rot = cell.location, cell.rotation
-        cell.curve_container = cc
-        # Trigger cell properties now that the curve container is available.
-        cell.location = _init_pos
-        cell.rotation = _init_rot
+        coll = self._create_collection(plot)
+        self.scene.collection.children.link(coll)
+        frame = self._plot_frame(plot)
+        coll.objects.link(frame)
+
+    def _create_collection(self, obj):
+        obj._backend_obj = c = bpy.data.collections.new(self.get_name(obj))
+        return c
+
+    def _plot_frame(self, plot):
+        curve = bpy.data.curves.new(self.get_name(plot) + "_frame", type="CURVE")
+        mat = bpy.data.materials.new(self.get_name(plot) + "_frame")
+        mat.diffuse_color = (1, 0, 0, 1)
+        curve.materials.append(mat)
+        curve.dimensions = '3D'
+        curve.resolution_u = 2
+        curve.bevel_depth = 0.01
+        line = curve.splines.new('POLY')
+        line.points.add(2)
+        line.points.foreach_set("radius", [25] * 3)
+        o = np.concatenate((plot._origin, [1]))
+        line.points[0].co = o + [plot._scale[0], 0, 0, 0]
+        line.points[1].co = o
+        line.points[2].co = o + [0, plot._scale[1], 0, 0]
+        obj = bpy.data.objects.new(self.get_name(plot) + "_frame", curve)
+        return obj
 
     def get_rotation(self, obj):
         return obj._backend_obj.rotation_euler

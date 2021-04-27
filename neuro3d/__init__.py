@@ -143,15 +143,11 @@ class Cell(RequiresSupport, HasBackendObject, requires=["create_cell", "get_loca
         self._location = location
         self._rotation = rotation
 
+    def __register__(self, id):
+        controller.create_cell(id, self)
+
     def __getstate__(self):
         return dict()
-
-    def register(self):
-        """
-        Register the cell with the controller to create its Blender object and manage its
-        state. Only available inside Blender.
-        """
-        controller.create_cell(self)
 
     @property
     def roots(self):
@@ -204,6 +200,29 @@ class Cell(RequiresSupport, HasBackendObject, requires=["create_cell", "get_loca
         self._rotation = value
 
 
+class Plot(RequiresSupport, HasBackendObject, requires=["create_plot"]):
+    def __init__(self, origin, scale, image_scale, frame_window):
+        self._origin = np.array(origin)
+        self._scale = np.array(scale)
+        self._image = np.array(image_scale)
+        self._window = frame_window
+        self._traces = []
+
+    def __register__(self, id):
+        controller.create_plot(id, self)
+
+    def add_trace(self, signal, time):
+        self._traces.append(Scatter(self, signal, time))
+
+
+class Scatter(RequiresSupport, requires=["plot_segment"]):
+    def __init__(self, plot, signal, time):
+        self._plot = plot
+        v1, v2 = itertools.tee(zip(signal, time))
+        next(v2, None)
+        for (p1, t1), (p2, t2) in zip(v1, v2):
+            controller.plot_segment(plot, p1, t1, p2, t2)
+
 
 def create_branch(*args, **kwargs):
     """
@@ -222,3 +241,17 @@ def create_cell(roots):
     """
     cell = Cell(roots)
     return cell
+
+def require(id):
+    def fetch(f):
+        try:
+            obj = controller.find(id)
+        except IdError:
+            obj = f(id)
+            if hasattr(obj, "__register__"):
+                obj.__register__(id)
+            else:
+                controller.register_object(obj, id)
+        return obj
+
+    return fetch

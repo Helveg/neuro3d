@@ -11,6 +11,11 @@ _t(
             MissingControllerSupport=_e(),
             UnknownBackendError=_e("name"),
         ),
+        IdError=_e(
+            "id",
+            IdMissingError=_e(),
+            IdTakenError=_e("id", "obj"),
+        ),
         AnimationError=_e(
             CalibrationNotSupportedError=_e(),
         ),
