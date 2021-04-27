@@ -6,7 +6,14 @@ _backend = None
 
 @functools.lru_cache()
 def _get_backends():
-    return [entry_point.load()() for entry_point in pkg_resources.iter_entry_points("neuro3d.backends")] + [FallbackBackend()]
+    backends = []
+    for entry_point in pkg_resources.iter_entry_points("neuro3d.backends"):
+        try:
+            backends.append(entry_point.load()())
+        except:
+            traceback.print_exc()
+    backends.append(FallbackBackend())
+    return backends
 
 
 def get_backends():
