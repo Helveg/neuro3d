@@ -1,12 +1,13 @@
 try:
     import bpy
+    import bpy.types
 except ImportError:
     raise ImportError("`neuro3d._blender` can only be imported inside Blender.") from None
 
 from .curve_container import CurveContainer, _get_curve_template, _get_default_color
 from neuro3d.backend import Controller
 from neuro3d.exceptions import *
-import functools, pickle, base64, numpy as np
+import warnings, functools, pickle, base64, numpy as np
 
 
 def _load(obj):
@@ -29,11 +30,26 @@ class SceneState:
         # If `_objects` is already set then we were loaded from a pickle
         if getattr(self, "_objects", False):
             print("Objs from pickle?")
-            self._objects = {k: BlenderController.get_n3d(self._scene.objects[v]) for k, v in self._objects.items()}
+            self._objects = dict()
+            for k,v in self._objects.items():
+                try:
+                    self._objects[k] = self._obj_from_pickle(v)
+                except KeyError:
+                    warnings.warn(f"Couldn't find obj {k} '{v}'.")
+                    continue
             self._next_object_id = max(self._objects.keys(), default=0) + 1
         else:
             self._objects = {}
             self._next_object_id = 0
+
+    def _obj_from_pickle(self, name):
+        if name.startswith("::"):
+            name = name[2:]
+            parent = self._scene.collection.children
+        else:
+            parent = self._scene.collection.objects
+        return BlenderController.get_n3d(parent[name])
+
 
     def _save(self):
         print("State being saved")
@@ -43,8 +59,17 @@ class SceneState:
         state = {k: v for k, v in self.__dict__.items() if k not in ("_objects", "_scene")}
         obj_state = {}
         for k, o in self._objects.items():
-            o._backend_obj["_n3d_pickle"] = _dump(o)
-            obj_state[k] = o._backend_obj.name
+            try:
+                o._backend_obj["_n3d_pickle"] = _dump(o)
+            except ReferenceError:
+                # Object has been removed, don't store it.
+                del self._objects[k]
+                continue
+            else:
+                name = o._backend_obj.name
+                if isinstance(o._backend_obj, bpy.types.Collection):
+                    name = "::" + name
+                obj_state[k] = name
         state["_objects"] = obj_state
         print("Obj stored:", state)
         return state

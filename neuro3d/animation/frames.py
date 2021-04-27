@@ -31,9 +31,11 @@ class FrameWindow:
     def __init__(self, f_start, f_stop, t_start, t_stop):
         self._t0 = t_start
         self._tn = t_stop
+        self._tt = t_stop - t_start
         self._f0 = f_start
         self._fn = f_stop
-        self._a = (self._fn - self._f0) / (self._tn - self._t0)
+        self._ft = f_stop - f_start
+        self._a = self._ft / self._tt
 
     def iterate_keyframes(self, keyframes):
         yield from zip(map(self.get_frame, keyframes._time), keyframes._signal)
