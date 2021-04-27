@@ -3,6 +3,7 @@ __version__ = "0.0.4"
 import warnings
 import numpy as np
 from .backend import establish_backends, get_backend, RequiresSupport
+from .exceptions import *
 
 print("Checking backends")
 establish_backends()
@@ -51,7 +52,7 @@ from . import animation
 from .render import render
 from .backend import set_backend
 from .animation import encoders
-from .animation.frames import time, rtime
+from .animation.frames import FrameWindow, time, rtime
 
 class HasBackendObject:
     def __getstate__(self):
@@ -211,22 +212,16 @@ def create_branch(*args, **kwargs):
     """
     Create a new :class:`.Branch`.
     """
-    print("???", Branch(*args, **kwargs))
     return Branch(*args, **kwargs)
 
 
-def create_cell(roots, register=inside_blender):
+def create_cell(roots):
     """
     Create a new :class:`.Cell` from the given roots.
 
     :param roots: Collection of :class:`Branches <.Branch>` without parents that start a
         branch of the cell morphology.
     :type roots: iterable
-    :param register: Register the cell with the controller to create its Blender object
-        and manage its state. Only available inside Blender.
-    :type register: bool
     """
     cell = Cell(roots)
-    if register:
-        cell.register()
     return cell
