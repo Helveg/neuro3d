@@ -203,9 +203,6 @@ class Cell(RequiresSupport, HasBackendObject, requires=["create_cell", "get_loca
             return controller.set_rotation(self.curve_container, value)
         self._rotation = value
 
-    def __dissolve__(self):
-        for root in roots:
-            root.__dissolve__()
 
 
 def create_branch(*args, **kwargs):
