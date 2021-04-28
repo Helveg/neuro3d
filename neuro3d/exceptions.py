@@ -11,6 +11,9 @@ _t(
             MissingControllerSupport=_e(),
             UnknownBackendError=_e("name"),
         ),
+        FactoryError=_e(
+            TooManyProductsError=_e(),
+        ),
         IdError=_e(
             "id",
             IdMissingError=_e(),

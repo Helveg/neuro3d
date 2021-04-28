@@ -2,12 +2,8 @@ __version__ = "0.0.4"
 
 import warnings
 import numpy as np
-from .backend import establish_backends, get_backend, RequiresSupport
+from .backend import establish_backends, get_backend, BackendObject, RequiresSupport
 from .exceptions import *
-
-print("Checking backends")
-establish_backends()
-print("Back from backends")
 
 try:
     import bpy
@@ -44,7 +40,7 @@ if inside_blender:
     def unregister():
         addon.unregister()
 
-
+establish_backends()
 _startup_backend = get_backend()
 controller = _startup_backend.get_controller()
 
@@ -54,11 +50,8 @@ from .backend import set_backend
 from .animation import encoders
 from .animation.frames import FrameWindow, time, rtime
 
-class HasBackendObject:
-    def __getstate__(self):
-        return {k: v for k, v in self.__dict__.items() if k != "_backend_obj"}
 
-class Branch(RequiresSupport, requires=[]):
+class Branch(BackendObject, requires=[]):
     """
     A branch is a piece of uninterrupted unbranching cable used to construct
     :class:`cells <.Cell>`.
@@ -128,7 +121,7 @@ class Branch(RequiresSupport, requires=[]):
         return d
 
 
-class Cell(RequiresSupport, HasBackendObject, requires=["create_cell", "get_location", "set_location", "get_rotation", "set_rotation"]):
+class Cell(BackendObject, requires=["create_cell", "get_location", "set_location", "get_rotation", "set_rotation"]):
     """
     A cell is the 3D representation of a collection of root :class:`Branches <.Branch>`,
     branching out into child Branches.
@@ -143,8 +136,8 @@ class Cell(RequiresSupport, HasBackendObject, requires=["create_cell", "get_loca
         self._location = location
         self._rotation = rotation
 
-    def __register__(self, id):
-        controller.create_cell(id, self)
+    def __register__(self):
+        controller.create_cell(self)
 
     def __getstate__(self):
         return dict()
@@ -200,7 +193,7 @@ class Cell(RequiresSupport, HasBackendObject, requires=["create_cell", "get_loca
         self._rotation = value
 
 
-class Plot(RequiresSupport, HasBackendObject, requires=["create_plot"]):
+class Plot(BackendObject, requires=["create_plot"]):
     def __init__(self, origin, scale, image_scale, frame_window):
         self._origin = np.array(origin)
         self._scale = np.array(scale)
@@ -208,21 +201,17 @@ class Plot(RequiresSupport, HasBackendObject, requires=["create_plot"]):
         self._window = frame_window
         self._traces = []
 
-    def __register__(self, id):
-        controller.create_plot(id, self)
+    def __register__(self):
+        controller.create_plot(self)
 
     def add_trace(self, signal, time):
         self._traces.append(Scatter(self, signal, time))
 
 
-class Scatter(RequiresSupport, requires=["plot_segment"]):
+class Scatter(RequiresSupport, requires=["create_scatter"]):
     def __init__(self, plot, signal, time):
         self._plot = plot
-        v1, v2 = itertools.tee(zip(signal, time))
-        next(v2, None)
-        for (p1, t1), (p2, t2) in zip(v1, v2):
-            controller.plot_segment(plot, p1, t1, p2, t2)
-
+        self._curve = controller.create_scatter(self, signal, time)
 
 def create_branch(*args, **kwargs):
     """
@@ -249,11 +238,22 @@ def require(id):
         except IdError:
             obj = None
         if obj is None:
-            obj = f(id)
-            if hasattr(obj, "__register__"):
-                obj.__register__(id)
-            else:
-                controller.register_object(obj, id)
+            _factorize(f, id)
         return obj
 
     return fetch
+
+
+def _factorize(factory, id):
+    # `factorize` runs a factory method and will require exactly 1 instance of
+    # a child of `BackendObject` to be created during the factory call. Inside
+    # the `__new__` call the product will be registered with the controller and
+    # if the instance has a registration hook, that will be called as well.
+    backend = get_backend()
+    controller._factory_id = id
+    controller._factory_product = None
+    obj = factory(id)
+    if controller._factory_product is None:
+        warnings.warn("Factory call did not produce a backend object.")
+    controller._factory_id = None
+    controller._factory_product = None

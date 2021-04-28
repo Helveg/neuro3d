@@ -112,6 +112,41 @@ class FallbackController(Controller):
     pass
 
 
+class BackendObject:
+    def __init_subclass__(cls, requires=None, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._support_requirements = requires
+
+    def __new__(cls, *args, **kwargs):
+        backend = get_backend()
+        controller = backend.get_controller()
+        missing = [r for r in cls._support_requirements if not hasattr(controller, r)]
+        if missing:
+            raise MissingControllerSupport(f"Can't create {cls.__name__} because {backend.name} misses {', '.join(missing)} to support it.")
+        obj = super().__new__(cls)
+        if controller._factory_id is not None:
+            id = controller._factory_id
+            if controller._factory_product is not None:
+                raise TooManyProductsError(f"Can't create {cls}, already created {controller._factory_product}.")
+            controller._factory_product = obj
+            controller.register_object(obj, id)
+            if hasattr(obj, "__register__"):
+                # We are __new__ and call __init__ ourselves, so we replace it
+                # with a function that when called by the Python interpreter
+                # after __new__ restores __init__.
+                obj.__init__(*args, **kwargs)
+                restore_init = obj.__init__
+                def skip_init_once(self, *args, **kwargs):
+                    self.__init__ = restore_init
+
+                obj.__init__ = skip_init_once.__get__(obj)
+                obj.__register__()
+        return obj
+
+    def __getstate__(self):
+        return {k: v for k, v in self.__dict__.items() if k != "_backend_obj"}
+
+
 class RequiresSupport:
     def __init_subclass__(cls, requires=None, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -120,7 +155,6 @@ class RequiresSupport:
     def __new__(cls, *args, **kwargs):
         backend = get_backend()
         controller = backend.get_controller()
-        print("Found controller:", controller, controller.__dict__)
         missing = [r for r in cls._support_requirements if not hasattr(controller, r)]
         if missing:
             raise MissingControllerSupport(f"Can't create {cls.__name__} because {backend.name} misses {', '.join(missing)} to support it.")
