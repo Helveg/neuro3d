@@ -96,7 +96,7 @@ class PeriodicTimeSignal(TimeSignal):
             r += self.dt
             yield r
 
-    def as_array(self):
+    def as_array(self, copy=False):
         return np.fromiter(self, dtype=float)
 
     def window(self, start, stop):
