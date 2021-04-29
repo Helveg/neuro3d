@@ -51,6 +51,7 @@ def _set_backend(backend):
         raise BackendUnavailableError(f"The %backend.name% backend is not available. Available backends: " + ", ".join(f"'{b.name}'" for b in _get_backends() if b.available), backend)
     __set_backend = True
     _backend = backend
+    backend.get_controller()._factory_id = None
     backend.initialize()
     neuro3d.properties = backend.get_properties()
 
@@ -136,10 +137,10 @@ class BackendObject:
                 # after __new__ restores __init__.
                 obj.__init__(*args, **kwargs)
                 restore_init = obj.__init__
-                def skip_init_once(self, *args, **kwargs):
+                def __init__(self, *args, **kwargs):
                     self.__init__ = restore_init
 
-                obj.__init__ = skip_init_once.__get__(obj)
+                obj.__init__ = __init__.__get__(obj)
                 obj.__register__()
         return obj
 

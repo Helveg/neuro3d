@@ -45,16 +45,21 @@ def _create_spline(curve, nurbs, radii, type="POLY"):
 
 class SceneState:
     def __new__(cls, scene=None):
+        print("INITING SCENE STATE")
         if scene and scene.neuro3d.pickle:
-            return _load(scene.neuro3d.pickle)
+            print("loading pickle")
+            pkl = _load(scene.neuro3d.pickle)
+            print(pkl, pkl._objects)
+            return pkl
         else:
             return super().__new__(cls)
 
     def __init__(self, scene):
         self._scene = scene
         # If `_objects` is already set then we were loaded from a pickle
+        print("SCENE INIT")
         if getattr(self, "_objects", False):
-            self._objects = dict()
+            print("FROM PICKLE??")
             for k,v in self._objects.items():
                 try:
                     self._objects[k] = self._obj_from_pickle(v)
@@ -62,6 +67,7 @@ class SceneState:
                     warnings.warn(f"Couldn't find obj {k} '{v}'.")
                     continue
             self._next_object_id = max(self._objects.keys(), default=0) + 1
+            print("LOADED OBJECTS", self._objects)
         else:
             self._objects = {}
             self._next_object_id = 0
@@ -97,7 +103,14 @@ class SceneState:
         return state
 
 
+_controller = None
+
+
 class BlenderController(Controller):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        global _controller
+        _controller = self
     @property
     @functools.lru_cache()
     def state(self):
@@ -150,8 +163,11 @@ class BlenderController(Controller):
         frame_nurbs = np.column_stack((np.tile(plot._origin, (3, 1)), np.ones(3)))
         frame_nurbs[0, 1] += plot._scale[1]
         frame_nurbs[2, 0] += plot._scale[0]
+        time_indicator = np.column_stack((np.tile(plot._origin, (2, 1)), np.ones(2)))
+        time_indicator[0, 0] += plot._scale[0] / 2
+        time_indicator[1, [0, 1]] += (plot._scale[0] / 2, plot._scale[1])
         name = self.get_blender_name(plot) + "_frame"
-        curve = _create_curve(name, color=(1, 0, 0, 1), splines=((frame_nurbs, [25] * 3),))
+        curve = _create_curve(name, color=(1, 0, 0, 1), splines=((frame_nurbs, [25] * 3), (time_indicator, [25] * 2)))
         return bpy.data.objects.new(name, curve)
 
     def get_rotation(self, obj):
@@ -186,13 +202,16 @@ class BlenderController(Controller):
     def get_n3d(obj):
         n3d_object = _load(obj["_n3d_pickle"])
         n3d_object._backend_obj = obj
+        if hasattr(n3d_object, "__restore__"):
+            n3d_object.__restore__()
         return n3d_object
 
     def create_scatter(self, scatter, signal, time):
         name = self.get_blender_name(scatter._plot) + f"_trace_{len(scatter._plot._traces)}"
         # Get the coordinates of the scatter on the first frame
-        phases = _sc_frame_phases(scatter, points, times, frame)
-        coords = _sc_frame_to_coords(scatter, signal, time.as_array(copy=False), scatter._plot._window._f0, phases=phases)
+        f0 = scatter._plot._window._f0
+        breakpoints, phases = _sc_frame_phases(scatter, signal, time.as_array(copy=False), f0)
+        coords = _sc_frame_to_coords(scatter, signal, time.as_array(copy=False), f0, phases=phases)
         curve = _create_curve(
             name,
             splines=(
@@ -203,8 +222,27 @@ class BlenderController(Controller):
             )
         )
         obj = bpy.data.objects.new(name, curve)
-        scatter._plot._backend_obj.objects.link(obj)
+        ret = scatter._plot._backend_obj.objects.link(obj)
+        scatter._curve = obj
+        self._animate_scatter(scatter, signal, breakpoints, phases)
+        return obj
 
+    def _animate_scatter(self, scatter, values, bp, phases):
+        curve = scatter._curve
+        controls = _hook_spline(curve, 0, collect_in=scatter._plot._backend_obj)
+        def animate_phase(phase, shift=0):
+            anim_points = np.nonzero(phases < phase)[0]
+            anim_targets = pre4 + shift
+            end_frames = np.take(bp, anim_targets, mode="clip")
+            end_vals = np.take(values, anim_targets, mode="clip")
+            print(f"Adding phase {phase} keyframes to:", anim_points)
+            for p, f, v in zip(anim_points, end_frames, end_vals):
+                print("Point", p, "slides to", v, "at", f)
+
+    def restore_traces(self, plot):
+        # TODO: Add conditional support for things that pickle and unpickle.
+        for t in plot._traces:
+            t._curve = plot._backend_obj.objects[t._curve]
 
 def _sc_frame_phases(scatter, points, times, fn):
     f0 = scatter._plot._window._f0
@@ -231,11 +269,11 @@ def _sc_frame_phases(scatter, points, times, fn):
     fases[if0] = 0
     if1 = ~if0 & (eb >= fn)
     fases[if1] = 1
-    return fases
+    return eb, fases
 
 def _sc_frame_to_coords(scatter, points, times, frame, phases=None):
     if phases is None:
-        phases = _sc_frame_phases(scatter, points, times, frame)
+        _, phases = _sc_frame_phases(scatter, points, times, frame)
     coords = np.empty((len(points), 3))
     coords[:, 2] = scatter._plot._origin[2]
     ox = scatter._plot._origin[0]
@@ -260,3 +298,32 @@ def _sc_frame_to_coords(scatter, points, times, frame, phases=None):
     coords[phases == 3, 1] = y(np.interp(t0 - st, times - t(frame), points))
     coords[phases == 4, 1] = y(points.take(np.nonzero(phases == 4)[0] + 1, mode='clip'))
     return coords
+
+def _hook_spline(curve, spline_index, collect_in=None):
+    c = curve.name
+    i = spline_index
+    control_objects = []
+    if collect_in is None:
+        collect_in = bpy.context.scene
+    if "hooks" in collect_in.children:
+        coll = collect_in.children["hooks"]
+    else:
+        coll = bpy.data.collections.new("hooks")
+        collect_in.children.link(coll)
+    for j in range(len(curve.data.splines[i].points)):
+        bpy.context.view_layer.objects.active = curve
+        bpy.ops.object.mode_set(mode="EDIT")
+        point = bpy.data.curves[c].splines[i].points[j]
+        hook_name = f"spline_{i}_hook{j}"
+        hook = bpy.data.objects[c].modifiers.new(hook_name, "HOOK")
+        obj = bpy.data.objects.new(f"{curve.name}_spline_{i}_hook_{j}_control", None)
+        print("Setting location of", obj.name, "to", point.co[:3])
+        coll.objects.link(obj)
+        print("Did loc change?", obj.location, point.co[:3])
+        hook.object = obj
+        bpy.data.curves[c].splines[i].points[j].select = True
+        bpy.ops.object.hook_assign(modifier=hook_name)
+        bpy.data.curves[c].splines[i].points[j].select = False
+        control_objects.append(obj)
+        bpy.ops.object.mode_set(mode="OBJECT")
+    return control_objects

@@ -193,7 +193,7 @@ class Cell(BackendObject, requires=["create_cell", "get_location", "set_location
         self._rotation = value
 
 
-class Plot(BackendObject, requires=["create_plot"]):
+class Plot(BackendObject, requires=["create_plot", "restore_traces"]):
     def __init__(self, origin, scale, image_scale, frame_window):
         self._origin = np.array(origin)
         self._scale = np.array(scale)
@@ -206,6 +206,18 @@ class Plot(BackendObject, requires=["create_plot"]):
 
     def add_trace(self, signal, time):
         self._traces.append(Scatter(self, signal, time))
+
+    def __getstate__(self):
+        oc = [t._curve for t in self._traces]
+        for t in self._traces:
+            t._curve = t._curve.name
+        s = super().__getstate__()
+        for t, c in zip(self._traces, oc):
+            t._curve = c
+
+    def __restore__(self):
+        controller.restore_traces(self)
+        print("Retoring self, restored curves", self._traces[0]._curve)
 
 
 class Scatter(RequiresSupport, requires=["create_scatter"]):
@@ -233,15 +245,24 @@ def create_cell(roots):
 
 def require(id):
     def fetch(f):
+        print("Executing fetch")
         try:
             obj = controller.find(id)
+            print("Found obj:", obj)
         except IdError:
             obj = None
         if obj is None:
-            _factorize(f, id)
+            print("Factorizing:", id)
+            obj = _factorize(f, id)
+            print("Created obj", obj)
         return obj
 
+    print("Created require")
     return fetch
+
+
+def get(id):
+    return controller.find(id)
 
 
 def _factorize(factory, id):
@@ -257,3 +278,4 @@ def _factorize(factory, id):
         warnings.warn("Factory call did not produce a backend object.")
     controller._factory_id = None
     controller._factory_product = None
+    return obj
