@@ -77,11 +77,12 @@ class TimeSignal:
         mask = (self.signal >= start) & (self.signal <= stop)
         return TimeSignal(self.signal, mask, copy)
 
-    def as_mask(self):
+    def as_mask(self, copy=False):
         if self._mask is not None:
-            return self._mask
+            mask = self._mask
         else:
-            return np.ones(self.signal.shape, dtype=bool)
+            mask = np.ones(self.signal.shape, dtype=bool)
+        return mask.copy() if copy else mask
 
 
 class PeriodicTimeSignal(TimeSignal):
