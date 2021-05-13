@@ -86,6 +86,15 @@ class StdDevEncoder(Encoder, operator="stdev"):
         self._cstd = stdev
 
 
+class SumEncoder(Encoder, operator="plus"):
+    def __init__(self, scalar):
+        self._scalar = scalar
+
+    def encode(self, signal, time):
+        signal += self._scalar
+        return signal, time
+
+
 class MultEncoder(Encoder, operator="mult"):
     def __init__(self, scalar):
         self._scalar = scalar
@@ -133,6 +142,37 @@ class RDPEncoder(Encoder, operator="rdp"):
         # Split the result matrix back to individual times and values columns
         time, signal = simplified[0:2]
         return signal, frames.time(time)
+
+
+class WindowDecimationEncoder(Encoder, operator="win_decimate"):
+    """
+    Decimate points that end up in the same frame of a window.
+
+    All points grouped into the same frame of a :class:`.frames.FrameWindow` are
+    decimated according to a survivor function, the default survivor function
+    picks the ``int(n / 2)``-th element as survivor.
+    """
+    def __init__(self, window, survivor=None, epsilon=0.0):
+        self._window = window
+        self._epsilon = epsilon
+        if survivor is not None:
+            self._survivor = survivor
+
+    def encode(self, signal, time):
+        cache = dict()
+        for s, f in enumerate(map(self._window.get_frame, time)):
+            cache.setdefault(f, []).append(s)
+        survivors = [self._survivor(s) for s in cache.values()]
+        if len(survivors) == len(signal):
+            # Prematurely optimized in case nothing gets decimated!
+            return signal, time
+        else:
+            signal = signal[survivors]
+            time = frames.time(time.as_array(copy=False)[survivors])
+            return signal, time
+
+    def _survivor(self, group):
+        return group[int(len(group) / 2)]
 
 
 # Line simplification algorithm using Numpy from:
