@@ -59,7 +59,11 @@ class TimeSignal:
         self._mask = mask
 
     def __iter__(self):
-        yield from self.signal[self._mask]
+        if self._mask is not None:
+            iter = self.signal[self._mask]
+        else:
+            iter = self.signal
+        yield from iter
 
     def __getitem__(self, slice):
         if self._mask is None:
