@@ -221,9 +221,9 @@ class Plot(BackendObject, requires=["create_plot", "restore_traces"]):
 
 
 class Scatter(RequiresSupport, requires=["create_scatter"]):
-    def __init__(self, plot, signal, time):
+    def __init__(self, plot, signal, time, **kwargs):
         self._plot = plot
-        self._curve = controller.create_scatter(self, signal, time)
+        self._curve = controller.create_scatter(self, signal, time, **kwargs)
 
 def create_branch(*args, **kwargs):
     """
