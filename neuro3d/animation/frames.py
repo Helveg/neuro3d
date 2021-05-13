@@ -59,7 +59,7 @@ class TimeSignal:
         self._mask = mask
 
     def __iter__(self):
-        return iter(self.signal)
+        yield from self.signal[self._mask]
 
     def __getitem__(self, slice):
         if self._mask is None:
@@ -83,9 +83,6 @@ class TimeSignal:
         else:
             mask = np.ones(self.signal.shape, dtype=bool)
         return mask.copy() if copy else mask
-
-    def __iter__(self):
-        yield from self.signal
 
 
 class PeriodicTimeSignal(TimeSignal):
