@@ -109,7 +109,7 @@ class Controller(abc.ABC):
         pass
 
 
-class FallbackController(Controller):
+class FallbackController:
     pass
 
 
