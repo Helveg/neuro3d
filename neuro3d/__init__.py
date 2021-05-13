@@ -204,8 +204,10 @@ class Plot(BackendObject, requires=["create_plot", "restore_traces"]):
     def __register__(self):
         controller.create_plot(self)
 
-    def add_trace(self, signal, time):
-        self._traces.append(Scatter(self, signal, time))
+    def add_trace(self, signal, time, encoder=None, color=None):
+        if encoder is not None:
+            signal, time = encoder.encode(signal, time)
+        self._traces.append(Scatter(self, signal, time, color=color))
 
     def __getstate__(self):
         oc = [t._curve for t in self._traces]
