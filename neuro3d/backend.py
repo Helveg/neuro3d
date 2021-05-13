@@ -51,7 +51,10 @@ def _set_backend(backend):
         raise BackendUnavailableError(f"The %backend.name% backend is not available. Available backends: " + ", ".join(f"'{b.name}'" for b in _get_backends() if b.available), backend)
     __set_backend = True
     _backend = backend
-    backend.get_controller()._factory_id = None
+    try:
+        backend.get_controller()._factory_id = None
+    except:
+        pass
     backend.initialize()
     neuro3d.properties = backend.get_properties()
 
