@@ -84,6 +84,9 @@ class TimeSignal:
             mask = np.ones(self.signal.shape, dtype=bool)
         return mask.copy() if copy else mask
 
+    def __iter__(self):
+        yield from self.signal
+
 
 class PeriodicTimeSignal(TimeSignal):
     def __init__(self, start, stop, dt):
