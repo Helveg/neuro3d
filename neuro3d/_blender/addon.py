@@ -13,7 +13,13 @@ from bpy.types import (
 def save_state(_):
     from .. import controller
 
-    controller.state._save()
+    try:
+        controller.state._save()
+    except ReferenceError:
+        # Sometimes the scene reference is invalid, manipulate it and try again.
+        controller._scene = bpy.context.scene
+        controller.state._scene = bpy.context.scene
+        controller.state._save()
 
 
 class StatePickle(PropertyGroup):

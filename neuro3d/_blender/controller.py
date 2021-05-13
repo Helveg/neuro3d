@@ -111,8 +111,13 @@ class BlenderController(Controller):
         return SceneState(self.scene)
 
     @property
-    @functools.lru_cache()
     def scene(self):
+        try:
+            self._scene.neuro3d
+        except (AttributeError, ReferenceError):
+            # AttributeError: first access, store ref to scene
+            # ReferenceError: previous ref invalid
+            self._scene = bpy.context.scene
         return bpy.context.scene
 
     def find(self, id):
@@ -341,7 +346,6 @@ def _sc_frame_to_coords(scatter, points, times, frame, phases=None):
     coords[phases < 2, 0] = ox + sx
     coords[phases > 2, 0] = ox
     coords[phases == 2, 0] = x(times[phases == 2])
-    assert np.all(times[phases == 2] >= t0 - st), "There are things in phase 2 outside of window"
     coords[phases == 0, 1] = y(points.take(np.nonzero(phases == 0)[0] - 1, mode='clip'))
     coords[phases == 1, 1] = y(np.interp(t0 + st, times - t(frame), points))
     coords[phases == 2, 1] = y(points[phases == 2])
