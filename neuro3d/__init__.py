@@ -200,6 +200,11 @@ class Plot(BackendObject, requires=["create_plot", "restore_traces"]):
         self._image = np.array(image_scale)
         self._window = frame_window
         self._traces = []
+        self._fw = int(image_scale[0] * 2 * frame_window._a)
+        self.fn_f = np.vectorize(lambda t: int(round((t - self._window._t0) * self._window._a) + self._window._f0), otypes=[int])
+        self.fn_t = np.vectorize(lambda f: self._window._t0 + (f + self._window._f0) / self._window._a, otypes=[float])
+        self.fn_y = np.vectorize(lambda v: self._origin[1] + v / self._image[1] * self._scale[1], otypes=[float])
+        self.fn_x = np.vectorize(lambda w: self._origin[0] + self._scale[0] / 2 + (w - self._window._t0) / (2 * self._image[0]) * self._scale[0], otypes=[float])
 
     def __register__(self):
         controller.create_plot(self)
