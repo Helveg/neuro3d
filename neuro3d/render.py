@@ -13,7 +13,7 @@ class Renderer:
     def __init__(self, file, workers):
         self.file = file
         self.workers = workers
-        self._bc = get_backend().get_renderer()(self.file)
+        self._bc = get_backend().get_renderer()
 
     def render_portions(self):
         with concurrent.futures.ThreadPoolExecutor(self.workers) as pool:

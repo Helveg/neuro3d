@@ -47,3 +47,6 @@ class BlenderBackend(Backend):
         from . import properties
 
         return properties
+
+    def get_renderer(self):
+        return BlenderRender
