@@ -160,6 +160,7 @@ class WindowDecimationEncoder(Encoder, operator="win_decimate"):
 
     def encode(self, signal, time):
         cache = dict()
+        # Map the frames of `time` to their indices in `time`
         for s, f in enumerate(map(self._window.get_frame, time)):
             cache.setdefault(f, []).append(s)
         survivors = [self._survivor(s) for s in cache.values()]
