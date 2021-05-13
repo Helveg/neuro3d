@@ -123,7 +123,6 @@ class RDPEncoder(Encoder, operator="rdp"):
         self._epsilon = epsilon
 
     def encode(self, signal, time):
-        import plotly.graph_objs as go
         if len(signal) == 0:
             return np.zeros(0), np.zeros(0)
 
