@@ -28,6 +28,7 @@ class Renderer:
         print(f"Rendering on worker {rank} of {size}", flush=True)
         res = self._bc(self.file).render_portion(rank, size)
         print(f"Render worker {rank} completed", res, flush=True)
+        comm.Barrier()
 
 def render(file, workers, comm=None):
     renderer = Renderer(file, workers)
