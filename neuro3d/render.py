@@ -16,6 +16,7 @@ class Renderer:
         self._bc = get_backend().get_renderer()
 
     def render_portions(self):
+        print("Starting rendering job pool")
         with concurrent.futures.ThreadPoolExecutor(self.workers) as pool:
             futures = [pool.submit(self._bc(self.file).render_portion, i, self.workers) for i in range(self.workers)]
             for future in concurrent.futures.as_completed(futures):
@@ -24,8 +25,9 @@ class Renderer:
     def render_mpi(self, comm):
         rank = comm.Get_rank()
         size = comm.Get_size()
+        print(f"Rendering on worker {rank} of {size}", flush=True)
         res = self._bc(self.file).render_portion(rank, size)
-        print(f"Render worker {rank} completed", res)
+        print(f"Render worker {rank} completed", res, flush=True)
 
 def render(file, workers, comm=None):
     renderer = Renderer(file, workers)

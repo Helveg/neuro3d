@@ -43,8 +43,6 @@ def _set_backend(backend):
     import neuro3d
 
     global __set_backend, _backend
-    print("Whyyyyyyyyy", __set_backend)
-    # raise Exception("Where is this first set from then?")
     if __set_backend:
         raise BackendSetError(f"The backend has already been set to '{_backend.name}'")
     if not backend.available:
