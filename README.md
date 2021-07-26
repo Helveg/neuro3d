@@ -3,7 +3,7 @@ Blender framework for visualization of neurons and simulation data.
 
 # Installation
 
-Make sure that `python` and `blender` are on your PATH.
+Make sure that `python` and `blender` are valid commands. Most likely you have to make them available on your PATH.
 
 ## Linux
 
