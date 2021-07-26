@@ -21,6 +21,15 @@ class Renderer:
             for future in concurrent.futures.as_completed(futures):
                 print("Render worker completed", future.result())
 
-def render(file, workers):
+    def render_mpi(self, comm):
+        rank = comm.Get_rank()
+        size = comm.Get_size()
+        res = self._bc(self.file).render_portion(rank, size)
+        print(f"Render worker {rank} completed", res)
+
+def render(file, workers, comm=None):
     renderer = Renderer(file, workers)
-    renderer.render_portions()
+    if comm:
+        renderer.render_mpi(comm)
+    else:
+        renderer.render_portions()
